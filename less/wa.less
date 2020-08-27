@@ -1,0 +1,177 @@
+/** --------------------------------------------
+    Global Styling Rules
+--------------------------------------------- */
+
+button#world-anvil {
+  flex: 0 0 32px;
+
+  img {
+    position: relative;
+    top: 4px;
+    border: none;
+  }
+}
+
+.wa-link {
+  margin: 0;
+  white-space: nowrap;
+  word-break: break-all;
+  text-shadow: 0 0 1px #ff6400;
+
+  &:hover {
+    text-shadow: 0 0 4px red;
+    cursor: pointer;
+  }
+}
+
+/** --------------------------------------------
+    Application Styling Rules
+--------------------------------------------- */
+
+.world-anvil {
+
+  .window-header a {
+    color: inherit;
+  }
+
+  .window-title {
+    color: inherit;
+  }
+
+  .article-container {
+    display: flex;
+
+    .article-content {
+      flex: 66%;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+
+    .panel.panel-default {
+      flex: 33%;
+    }
+
+    .sidebar-content,
+    .sidebar-bottom {
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+  }
+
+  .text-center {
+    text-align: center !important;
+  }
+
+  .col-md-6 {
+    flex: 50%;
+  }
+
+  .world-description {
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  header {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+
+    header.section {
+      border-bottom: 2px solid darkred;
+      margin-bottom: 5px;
+    }
+
+    h2 {
+      border-bottom: none;
+      margin: 0;
+    }
+
+    h3 {
+      margin: 0;
+    }
+
+    .controls {
+      flex: 1;
+      text-align: right;
+    }
+  }
+
+  /* Article Links */
+
+  .world-anvil-link {
+    flex: 1;
+    margin: 0;
+    padding-left: 20px;
+    background-image: url(icons/wa-icon.svg);
+    background-repeat: no-repeat;
+    background-size: 16px 16px;
+    background-position: 0 50%;
+    color: #191813;
+    text-decoration: none;
+  }
+
+  a.article-link {
+    color: #191813;
+    text-decoration: none;
+  }
+
+  .world-anvil-control {
+    width: auto;
+    height: 24px;
+    margin: 0;
+    padding: 0 4px;
+    line-height: 24px;
+    text-align: center;
+  }
+
+  /* Article Filters */
+
+  .article-filters {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    justify-content: flex-end;
+    align-items: center;
+
+    li {
+      flex: none;
+      margin-left: 3px
+    }
+  }
+
+  .world-anvil .article-filters button.world-anvil-control.inactive {
+    opacity: 0.65;
+  }
+}
+
+/** --------------------------------------------
+    Journal Entries
+--------------------------------------------- */
+
+.journal-sheet.world-anvil {
+
+  .image-thumb-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    img {
+      max-width: 320px;
+      max-height: 480px;
+    }
+  }
+}
+
+dt {
+  font-weight: bold;
+}
+
+dd {
+  padding-left: 5px;
+  margin: 3px 0;
+}
