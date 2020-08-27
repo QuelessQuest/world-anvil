@@ -7,9 +7,11 @@
 export async function importArticle(articleId, {entry = null, renderSheet = false} = {}) {
   const anvil = game.modules.get("world-anvil").anvil;
   const article = await anvil.getArticle(articleId);
+  const worldCssLink = anvil.worldCss ? await anvil.getCssLink(anvil.world.display_css, anvil.world.name) : "";
+  const articleCssLink = anvil.articleCss ? await anvil.getCssLink(article.css_styles, article.title) : "";
   const categoryId = article.category ? article.category.id : "0";
   const folder = game.folders.find(f => f.getFlag("world-anvil", "categoryId") === categoryId);
-  const content = await _getArticleContent(article);
+  const content = await _getArticleContent(article, worldCssLink, articleCssLink);
 
   // Update an existing Journal Entry
   if ( entry ) {
@@ -44,20 +46,20 @@ export async function importArticle(articleId, {entry = null, renderSheet = fals
  * @return {{img: string, html: string}}
  * @private
  */
-async function _getArticleContent(article) {
+async function _getArticleContent(article, worldCssLink, articleCssLink) {
   let body = "";
-  let aside = "";
   let sidePanel = {
-    top: "",
-    main: "",
-    bottom: ""
+    panelTop: "",
+    panelBottom: "",
+    sidebarTop: "",
+    sidebarBottom: ""
   }
 
   /**
    * Need 3 sections.
    * Main Article Content
    * Main Article Sections
-   * Sidebar information (side-top, side, site-bottom)
+   * Sidebar information
    */
   // Article sections
   if ( article.sections ) {
@@ -65,13 +67,16 @@ async function _getArticleContent(article) {
       let title = section.title || id.titleCase();
       switch (title.toLowerCase()) {
         case 'sidepanelcontent':
-          sidePanel.main += `<div class="sidebar-content">${section.content_parsed}</div><hr/>`;
+          sidePanel.panelTop += `<div class="sidebar-panel-content">${section.content_parsed}</div><hr/>`;
+          break;
+        case 'sidepanelcontentbottom':
+          sidePanel.panelBottom += `<div class="sidebar-bottom-panel">${section.content_parsed}</div><hr/>`;
+          break;
+        case 'sidebarcontent':
+          sidePanel.sidebarTop += `<div class="sidebar-content">${section.content_parsed}</div><hr/>`;
           break;
         case 'sidebarcontentbottom':
-          sidePanel.bottom += `<div class="sidebar-bottom">${section.content_parsed}</div><hr/>`;
-          break;
-        case 'sidebarcontenttop':
-          sidePanel.top += `<div class="sidebar-top">${section.content_parsed}</div><hr/>`;
+          sidePanel.sidebarBottom += `<div class="sidebar-bottom">${section.content_parsed}</div><hr/>`;
           break;
         default:
           body += `<h2>${title}</h2>\n<p>${section.content_parsed}</p><hr/>`;
@@ -79,41 +84,8 @@ async function _getArticleContent(article) {
     }
   }
 
-  // Article relations
-  if ( article.relations ) {
-    for (let [id, section] of Object.entries(article.relations)) {
-      const title = section.title || id.titleCase();
-      const items = section.items instanceof Array ? section.items : [section.items];  // Items can be one or many
-      const relations = items.filter(i => i.type !== 'customarticletemplate' && i.type !== 'image')
-          .map(i => `< span data-article-id="${i.id}" data-template="${i.type}">${i.title} </span>`);
-
-      if ( relations.length > 0 ) {
-        aside += `<dt>${title}:</dt><dd>${relations.join(", ")}</dd>`;
-      }
-    }
-  }
-
-  // Combine content sections
-  let content = `<h1>${article.title}</h1>\n`;
-  content += `<p><a href="${article.url}" title="${article.title} ${game.i18n.localize("WA.OnWA")}" target="_blank">${article.url}</a></p>\n<div class="article-container page"><div class="article-content">${article.content_parsed}`;
-  if ( body ) content += `${body}</div><hr/>`;
-  else content += "</div><hr/>";
-  if ( sidePanel.top || sidePanel.main || sidePanel.bottom ) {
-    content += `<div class="panel panel-default">`
-    if ( sidePanel.top ) content += sidePanel.top;
-    if ( sidePanel.main ) content += sidePanel.main;
-    if ( sidePanel.bottom ) content += sidePanel.bottom;
-    content += "</div>";
-  }
-  if ( aside ) content += `<aside><dl>${aside}</dl></aside>`;
-  content += "</div>";
-
-  // Disable image source attributes so that they do not begin loading immediately
-  content = content.replace(/src=/g, "data-src=");
-
   const div = document.createElement("div");
-  const style = await _processCSS();
-  div.innerHTML = content;
+  div.innerHTML = assembleContent(article, body, sidePanel);
 
   // Paragraph Breaks
   const t = document.createTextNode("%p%");
@@ -151,8 +123,10 @@ async function _getArticleContent(article) {
     el.replaceWith(span);
   });
 
+  // Add any requested World Anvil CSS
+  let html = worldCssLink + articleCssLink + div.innerHTML;
+
   // Regex formatting
-  let html = style + div.innerHTML;
   html = html.replace(/%p%/g, "</p>\n<p>");
 
   // Return content and image
@@ -163,31 +137,79 @@ async function _getArticleContent(article) {
 }
 
 /**
- * Import a single World Anvil article
- * @param {string} articleId            The World Anvil article ID to import
- * @param {JournalEntry|null} entry     An existing Journal Entry to sync
- * @return {Promise<JournalEntry>}
+ * Determine the appropriate column widths based on the "article-content-left" class in the
+ * fully rendered content
+ * @param article
+ * @returns {unknown[]}
  */
-async function _processCSS() {
+function determineColumns(article) {
 
-  let css = game.modules.get("world-anvil").anvil.display_css;
+  const leftSideSearch = document.createElement("div");
+  leftSideSearch.innerHTML = article.full_render.replace(/src=/g, "data-src=");
+  let leftColumn = leftSideSearch.querySelector(".article-content-left");
+  leftSideSearch.remove();
+  let leftColumnClass = leftColumn.className
+      .split(' ')
+      .filter(c => c.startsWith("col-md"))
+      [0];
+  let rightColumnClass = "col-md-" + (12 - leftColumnClass.substring(leftColumnClass.lastIndexOf("-")+1));
+  return [leftColumnClass, rightColumnClass];
+}
 
-  // Replace user-css and user-css-extended with world-anvil
-  //   - Removes stand alone class
-  css = css.replace(/\.user-css\S*,/g, "");
-  //   - Replaces stacked classes
-  css = css.replace( /\.user-css\S*[\n\s*]\.user-css\S*/g, ".word-anvil");
-  //   - Replaces user-css and user-css-extended with world-anvil
-  css = css.replace(/\.user-css\S*/g, ".world-anvil");
-  let file = new File([css], "test.css");
-  const fd = new FormData();
-  fd.set("source", "data");
-  fd.set("target", "modules/world-anvil/assets");
-  fd.set("upload", file);
-  fetch('/upload', {method: "POST", body: fd}).then(r => {
-    console.log("AFTER FETCH");
-    console.log(r);
-  })
+/**
+ * Construct the side panel relationship section
+ * @param relations   The relations object of the article
+ * @returns {string}  The relation section
+ */
+function getRelations(relations) {
+  let rel = "";
+  if ( relations ) {
+    rel += `<dl>`;
+    for (let [id, section] of Object.entries(relations)) {
+      const title = section.title || id.titleCase();
+      const items = section.items instanceof Array ? section.items : [section.items];  // Items can be one or many
+      const relationList = items.filter(i => i.type !== 'customarticletemplate' && i.type !== 'image')
+          .map(i => `<li><span data-article-id="${i.id}" data-template="${i.type}">${i.title}</span></li>`);
 
-  return `<link href="/modules/world-anvil/assets/test.css" rel="stylesheet">`;
+      if ( relationList.length > 0 ) {
+        rel += `<dt>${title}:</dt><dd><ul class="list-unstyled">${relationList.join()}</ul></dd>`;
+      }
+    }
+    rel += `</dl>`;
+    return rel;
+  } else return "";
+}
+
+/**
+ * Build the actual journal content from all the parts
+ * @param article     The article object
+ * @param body        The body of the article
+ * @param sidePanel   The side panel content of the article
+ * @returns {string}  The assembled content
+ */
+function assembleContent(article, body, sidePanel) {
+
+  let [leftColumnClass, rightColumnClass] = determineColumns(article);
+  let aside = getRelations(article.relations);
+
+  let content = `<h1>${article.title}</h1>\n`;
+  content += `<p><a href="${article.url}" title="${article.title} ${game.i18n.localize("WA.OnWA")}" target="_blank">${article.url}</a></p>\n<div class="article-container page"><div class="${leftColumnClass}">${article.content_parsed}`;
+  if ( body ) content += `${body}</div><hr/>`;
+  else content += "</div><hr/>";
+  if ( sidePanel.sidebarTop || sidePanel.panelTop || aside || sidePanel.panelBottom || sidePanel.sidebarBottom ) {
+    content += `<div class="${rightColumnClass}">`;
+    if ( sidePanel.sidebarTop ) content += sidePanel.sidebarTop;
+    if ( aside || sidePanel.panelTop || sidePanel.panelBottom ) {
+      content += `<div class="panel panel-default"><div class="panel-body">`;
+      if ( sidePanel.panelTop ) content += sidePanel.panelTop;
+      if ( aside ) content += aside;
+      if ( sidePanel.panelBottom ) content += sidePanel.panelBottom;
+      content += `</div></div>`;
+    }
+    if ( sidePanel.sidebarBottom ) content += sidePanel.sidebarBottom;
+    content += `</div>`;
+  }
+
+  // Disable image source attributes so that they do not begin loading immediately
+  return content.replace(/src=/g, "data-src=");
 }

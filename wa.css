@@ -35,24 +35,33 @@ button#world-anvil img {
 .world-anvil .article-container {
   display: flex;
 }
-.world-anvil .article-container .article-content {
-  flex: 66%;
-  margin-left: 10px;
-  margin-right: 10px;
-}
-.world-anvil .article-container .panel.panel-default {
+.world-anvil .article-container .sidebar-column {
   flex: 33%;
 }
-.world-anvil .article-container .sidebar-content,
-.world-anvil .article-container .sidebar-bottom {
-  margin-left: 10px;
-  margin-right: 10px;
+.world-anvil .list-unstyled {
+  padding-left: 0;
+  list-style: none;
+}
+.world-anvil .panel-body {
+  padding: 15px;
 }
 .world-anvil .text-center {
   text-align: center !important;
 }
+.world-anvil .col-md-3 {
+  flex: 25%;
+  padding-left: 15px;
+  padding-right: 15px;
+}
 .world-anvil .col-md-6 {
   flex: 50%;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+.world-anvil .col-md-9 {
+  flex: 75%;
+  padding-left: 15px;
+  padding-right: 15px;
 }
 .world-anvil .world-description {
   max-height: 200px;
