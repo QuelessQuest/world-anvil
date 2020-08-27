@@ -36,7 +36,6 @@ export default class WorldAnvil {
      * @type{string|null}
      */
     this.display_css = null;
-    this.fileDB = null;
 
     /**
      * The currently associated World Anvil User
@@ -106,7 +105,7 @@ export default class WorldAnvil {
    * @return {Promise<object>}
    */
   async getArticle(articleId) {
-    return this._fetch(`article/${articleId}`, {"load_all_properties": true});
+    return this._fetch(`article/${articleId}`);
   }
 
 	/* -------------------------------------------- */
@@ -131,27 +130,6 @@ export default class WorldAnvil {
       params.offset += nReturned; // Increment the pagination
       if ( !result ) result = batch;  // Store the 1st result
       else result.articles = result.articles.concat(batch.articles); // Append additional results
-    }
-
-    // Return the complete result
-    return result;
-  }
-
-  async getImages(params={}) {
-    params.limit = parseInt(params.limit) || 50;
-    params.offset = parseInt(params.offset) || 0;
-
-    // Query paged articles until we have retrieved them all
-    let hasMore = true;
-    let result = null;
-    while ( hasMore ) {
-      let batch = await this._fetch(`world/${this.worldId}/images`, params);
-      batch.images = batch.images || [];
-      const nReturned = batch.images.length;
-      hasMore = nReturned === params.limit;  // There may be more
-      params.offset += nReturned; // Increment the pagination
-      if ( !result ) result = batch;  // Store the 1st result
-      else result.images = result.images.concat(batch.images); // Append additional results
     }
 
     // Return the complete result
@@ -193,10 +171,6 @@ export default class WorldAnvil {
     const world = await this._fetch(`world/${this.worldId}`);
     this.worldId = worldId;
     this.display_css = world.display_css;
-
-    const img = await this._fetch(`world/${this.worldId}/images`);
-    console.log("IMAGES =======================");
-    console.log(img);
     return this.world = world;
   }
 }

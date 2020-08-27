@@ -154,15 +154,7 @@ async function _getArticleContent(article) {
   // Regex formatting
   let html = style + div.innerHTML;
   html = html.replace(/%p%/g, "</p>\n<p>");
-  /*
-    return new Promise(resolve => {
-      resolve({
-        html: html,
-        img: image
-      });
-    });
 
-   */
   // Return content and image
   return {
     html: html,
@@ -170,6 +162,12 @@ async function _getArticleContent(article) {
   }
 }
 
+/**
+ * Import a single World Anvil article
+ * @param {string} articleId            The World Anvil article ID to import
+ * @param {JournalEntry|null} entry     An existing Journal Entry to sync
+ * @return {Promise<JournalEntry>}
+ */
 async function _processCSS() {
 
   let css = game.modules.get("world-anvil").anvil.display_css;
@@ -190,71 +188,6 @@ async function _processCSS() {
     console.log("AFTER FETCH");
     console.log(r);
   })
-  // Retrieve any files and store. Then replace references to stored files
-  //let urls = Array.from(css.matchAll(/url\((.*)\)/g), m => m[1]);
-  //let uniqueUrls = [...new Set(urls)];
 
-  //uniqueUrls.forEach(uu => {
-  //  let names = uu.split("/");
-  //  let name = names[names.length - 1];
-  //  css = css.replace(new RegExp(uu, 'g'), `/modules/world-anvil/assets/${name}`);
-  //});
-
-  //await _getFiles(uniqueUrls);
   return `<link href="/modules/world-anvil/assets/test.css" rel="stylesheet">`;
-}
-
-async function _getFiles(uniqueUrls) {
-
-  let db = game.modules.get("world-anvil").anvil.fileDB;
-
-  uniqueUrls.forEach(u => {
-    console.log("ATTEMPTING TO FETCH: " + u);
-    fetch(u, {mode: "cors"})
-        .then(res => {
-          console.log("FETCH RES");
-          console.log(res);
-          res.blob().then(blob => {
-            let names = u.split("/");
-            let name = names[names.length - 1];
-
-            console.log("BLOB TO WRITE");
-            console.log(blob);
-            //let objectStore = db.transaction(['wa_os'], 'readwrite').objectStore('wa_os');
-            //objectStore.add({name: name, blob: blob});
-          });
-        });
-  });
-
-  /*
-  let objectStore = db.transaction(['wa_os'], 'readwrite').objectStore('wa_os');
-  objectStore.openCursor().onsuccess = function (e) {
-    // Get a reference to the cursor
-    let cursor = e.target.result;
-    if ( cursor ) {
-      console.log("HERE");
-
-      let blob = cursor.value.blob;
-      let name = cursor.value.name;
-      console.log("N");
-      console.log(name);
-      console.log("B");
-      console.log(blob);
-      let file = new File([blob], name, {type: blob.type});
-      console.log("F");
-      console.log(file);
-      const fd = new FormData();
-      fd.set("source", "data");
-      fd.set("target", "modules/world-anvil/assets");
-      fd.set("upload", file);
-      fetch('/upload', {method: "POST", body: fd}).then(r => {
-        console.log("uploaded");
-        console.log(r);
-      });
-
-      cursor.continue();
-    }
-  };
-
-   */
 }

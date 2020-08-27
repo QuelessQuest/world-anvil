@@ -18,30 +18,6 @@ Hooks.once("init", () => {
 
   // Register some helper functions
   module.importArticle = importArticle;
-
-  // Initialize file database for handling urls in CSS
-  let request = window.indexedDB.open('wa_css', 1);
-  request.onerror = function () {
-    console.log('Database failed to open');
-  };
-
-  request.onsuccess = function () {
-    console.log('Database opened successfully');
-    module.anvil.fileDB = request.result;
-  };
-
-  request.onupgradeneeded = function (e) {
-    let db = e.target.result;
-
-    // Create an objectStore to store our notes in (basically like a single table)
-    // including a auto-incrementing key
-    let objectStore = db.createObjectStore('wa_os', {keyPath: 'id', autoIncrement: true});
-
-    // Define what data items the objectStore will contain
-    objectStore.createIndex('blob', 'blob', {unique: false});
-    objectStore.createIndex('name', 'name', {unique: false});
-    console.log('Database setup complete');
-  };
 });
 
 

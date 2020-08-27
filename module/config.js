@@ -53,7 +53,8 @@ export default class WorldAnvilConfig extends FormApplication {
       displayWorldChoices: stepNumber >= 2,
       worlds: anvil.worlds,
       worldId: anvil.worldId,
-      display_css: anvil.display_css,
+      worldCss: anvil.worldCss,
+      articleCss: anvil.articleCss,
       authToken: anvil.authToken,
       fileDB: anvil.fileDB
     };
